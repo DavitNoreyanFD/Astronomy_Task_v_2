@@ -5,17 +5,17 @@ data and we must sort by a specific column, then our sorting function gets an ar
 from random import randint
 
 
-def quicksort(array, key):
+def quicksort(array: list, key) -> list:
     if len(array) < 2:
         return array
-    low, same, high = [], [], []
+    left, same, right = [], [], []
     pivot = key(array[randint(0, len(array) - 1)])
     for item in array:
         if key(item) > pivot:
-            low.append(item)
+            left.append(item)
         elif key(item) == pivot:
             same.append(item)
         elif key(item) < pivot:
-            high.append(item)
+            right.append(item)
 
-    return quicksort(low, key) + same + quicksort(high, key)
+    return quicksort(left, key) + same + quicksort(right, key)

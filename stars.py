@@ -1,25 +1,21 @@
-import configparser
-
-
-config = configparser.ConfigParser()
-config.read('config.ini')
-
-data_file = config['USER']['datafile']
-fov_v = float(config['USER']['fov_v'])
-fov_h = float(config['USER']['fov_h'])
-ra_user = float(config['USER']['ra_user'])
-dec_user = float(config['USER']['dec_user'])
-n = int(config['USER']['n'])
+"""
+a class of stars is written in this module
+"""
+import const_and_inp
 
 
 class Star:
-    def __init__(self, star_id, ra, dec, mag, flux):
+    def __init__(self, star_id, ra, dec, mag):
+        """
+        the star object characterizes 5 attributes, id, ra, dec, mag and distance,
+        the distance we count as having ra and dec
+        """
         self.id = star_id
         self.ra = ra
         self.dec = dec
         self.mag = mag
-        self.flux = flux
-        self.distance = ((self.ra-fov_v)**2+(self.dec-fov_h)**2)**0.5
+        self.distance = ((self.ra-const_and_inp.fov_v)**2 +
+                         (self.dec-const_and_inp.fov_h)**2)**0.5
 
     def __repr__(self):
-        return f'{self.id}, {self.ra}, {self.dec}, {self.mag}, {self.flux}, {self.distance}'
+        return f'{self.id}, {self.ra}, {self.dec}, {self.mag}, {self.distance}'

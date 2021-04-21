@@ -1,80 +1,90 @@
-import configparser
+"""
+the script works functionally, the necessary attributes are taken and
+placed in the attributes of the Stars class to avoid unwanted use of a lot of index
+this is a basic module, there are basic functions including open_tsv, n_high_mag, create_result
+"""
+import const_and_inp
 import datetime
 import stars
 import sort_module
 
-config = configparser.ConfigParser()
-config.read('config.ini')
 
-data_file = config['USER']['datafile']
-fov_v = float(config['USER']['fov_v'])
-fov_h = float(config['USER']['fov_h'])
-ra_user = float(config['USER']['ra_user'])
-dec_user = float(config['USER']['dec_user'])
-n = int(config['USER']['n'])
-
-INDEX_ID = 7
-INDEX_RA = 0
-INDEX_DEC = 1
-INDEX_MAG = 22
-INDEX_FLUX = 20
-
-
-def open_tsv(data_tsv, fov_ra, fov_dec, ra_user_input, dec_user_input) -> list:
+def open_tsv(data_tsv, fov_ra: float, fov_dec: float, ra_user_input: float, dec_user_input: float) -> list:
     """
     in order not to load memory, the function checks if the star enters the field of view and then
     adds to array
-    :param data_tsv:
-    :param fov_ra:
-    :param fov_dec:
-    :param ra_user_input:
-    :param dec_user_input:
-    :return:
     """
+    fov_ra_min = ra_user_input - fov_ra / 2
+    fov_ra_max = ra_user_input + fov_ra / 2
+    fov_dec_min = dec_user_input - fov_dec / 2
+    fov_dec_max = dec_user_input + fov_dec / 2
     with open(data_tsv) as fd:
         list_of_db = []
-        next(fd)
         for row in fd:
-            list_row = row[:-1].split('\t')
+            list_row = row.split('\t')
             try:
-
-                if (ra_user_input - fov_ra / 2) < float(
-                        list_row[INDEX_RA]) < (ra_user_input + fov_ra / 2) and (dec_user_input - fov_dec / 2) < float(
-                        list_row[INDEX_DEC]) < (dec_user_input + fov_dec / 2):
+                if fov_ra_min < float(list_row[const_and_inp.INDEX_RA]) < fov_ra_max and \
+                        fov_dec_min < float(list_row[const_and_inp.INDEX_DEC]) < fov_dec_max:
                     list_of_db.append(
                         stars.Star(
-                            int(list_row[INDEX_ID]),
-                            float(list_row[INDEX_RA]),
-                            float(list_row[INDEX_DEC]),
-                            float(list_row[INDEX_MAG]),
-                            float(list_row[INDEX_FLUX])
+                            int(list_row[const_and_inp.INDEX_ID]),
+                            float(list_row[const_and_inp.INDEX_RA]),
+                            float(list_row[const_and_inp.INDEX_DEC]),
+                            float(list_row[const_and_inp.INDEX_MAG])
                         )
                     )
             except ValueError:
                 pass
+
         return list_of_db
 
 
-def n_high_mag(array, count):
-    if len(array) > count:
-        return array[:count]
+def n_high_mag(array: list, num: int) -> list:
+    """
+functions strips out num elements from array
+    """
+    if len(array) > num:
+        return array[:num]
     else:
         return array
 
 
-def my_key(item):
+def my_key_mag(item):
     return item.mag
 
 
-def create_result(star_array):
+def my_key_dist(item):
+    return item.distance
+
+
+def create_result(star_array: list):
+    """
+the function is designed to create the final output as a .csv file,
+the file name is the date and time of the current time
+    """
     with open(f'{datetime.datetime.now()}.csv', 'w') as csv_temp:
-        csv_temp.write('id \t ra\t dec\t mag\t flux \t distance \n')
+        head = 'ID'.center(20) + ',' + \
+               'RA'.center(20) + ',' + \
+               'DEC'.center(20) + ',' + \
+               'MAG'.center(20) + ',' + \
+               'DISTANCE'.center(20) + '\n'
+        csv_temp.write(head)
         for star in star_array:
-            csv_temp.write(f'{star.id},{star.ra},{star.dec},{star.mag},{star.flux},{star.distance}\n')
+            row = f'{star.id}'.center(20) + ',' + \
+                  f'{star.ra}'.center(20) + ',' + \
+                  f'{star.dec}'.center(20) + ',' + \
+                  f'{star.mag}'.center(20) + ',' + \
+                  f'{star.distance}'.center(20) + '\n'
+            csv_temp.write(row)
 
 
-ob_list = open_tsv(data_file, fov_v, fov_h, ra_user, dec_user)
-sorted_list = sort_module.quicksort(ob_list, key=my_key)
-create_result(sorted_list)
-
-
+if __name__ == '__main__':
+    ob_list = open_tsv(const_and_inp.data_file,
+                       const_and_inp.fov_v,
+                       const_and_inp.fov_h,
+                       const_and_inp.ra_user,
+                       const_and_inp.dec_user)  # we get stars that come into view
+    sorted_list_by_mag = sort_module.quicksort(ob_list, key=my_key_mag)  # we sort stars by brightness
+    ob_list_n_high = n_high_mag(sorted_list_by_mag, const_and_inp.n)  # we take N number of stars
+    sorted_list_by_dist = sort_module.quicksort(ob_list_n_high, key=my_key_dist)  # we sort stars by distance
+    create_result(sorted_list_by_dist)  # create output result
